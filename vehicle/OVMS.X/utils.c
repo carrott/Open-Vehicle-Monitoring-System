@@ -340,15 +340,15 @@ long gps2latlon(char *gpscoord)
     //then bit shift into place and accumulate
 #define GPS_DIVIDER ((uint32_t) 515396) //(3600 * 2048 / 60000000) * 2^22
     frac = ( frac + (1<<1) ) >> 2; //drop two bits we can't use
-    rem = (uint32_t)(((frac & 0x0FFF) * GPS_DIVIDER) + (1<<19) ) >> 20;
-    frac = ((((uint32_t)(frac & 0x00FFF000)>>12) * GPS_DIVIDER) + (1<<7)) >> 8;    
+    rem = (uint32_t)(((frac & 0x0FFF) * GPS_DIVIDER) + 524288 ) >> 20;
+    frac = ((((uint32_t)(frac & 0x00FFF000)>>12) * GPS_DIVIDER) + 128) >> 8;    
 #else //SIM808: (-)DDD.DDDDDD
     //fractional part is at most 20bits (999999 < 2^20)
     //multiply 10bits at a time with 22bit constant to keep within 32bits
     //then bit shift into place and accumulate
 #define GPS_DIVIDER ((uint32_t) 1932735) //(3600 * 2048 / 1000000) * 2^18
-    rem = (uint32_t)(((frac & 0x03FF) * GPS_DIVIDER) + (1<<17) ) >> 18;
-    frac = ((((uint32_t)(frac & 0x000FFC00)>>10) * GPS_DIVIDER) + (1<<7)) >> 8;
+    rem = (uint32_t)(((frac & 0x03FF) * GPS_DIVIDER) + 131072 ) >> 18;
+    frac = ((((uint32_t)(frac & 0x000FFC00)>>10) * GPS_DIVIDER) + 128 ) >> 8;
 #endif //OVMS_SIMCOM_SIM908
 
     frac += rem;
@@ -356,7 +356,7 @@ long gps2latlon(char *gpscoord)
 
   if(degrees <0)
     frac = -frac;
-  return degrees * 2048 * 3600 + frac;
+  return (int32_t)degrees * 7372800 + frac; //2048*3600
 }
 
 
