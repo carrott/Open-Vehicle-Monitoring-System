@@ -659,7 +659,7 @@ char *stp_l2f_h(char *dst, const rom char *prefix, unsigned long val, int cdecim
 
 char *stp_latlon(char *dst, const rom char *prefix, long latlon)
 {
-  float res;
+  unsigned long res;
 
   if (prefix)
     dst = stp_rom(dst, prefix);
@@ -667,10 +667,15 @@ char *stp_latlon(char *dst, const rom char *prefix, long latlon)
   if (latlon < 0)
   {
     *dst++ = '-';
-    latlon = ~latlon; // and invert value
+    latlon = -latlon;
   }
-  res = (float) latlon / 2048 / 3600; // Tesla specific GPS conversion
-  return stp_l2f(dst, NULL, res * 1000000, 6);
+#define STP_LATLON_SCALER1 (unsigned long) 8888 // 1000000 / (3600 * 2048) * 2^16
+#define STP_LATLON_SCALER2 (unsigned long) 58254 // remainder (0.888888) * 2^16
+  res  = (((unsigned long) latlon >>16) * STP_LATLON_SCALER1);
+  res += ((unsigned short) latlon * STP_LATLON_SCALER1 + 32768UL) >> 16;
+  res += (((unsigned long) latlon >>16) * STP_LATLON_SCALER2 + 32768UL) >> 16;
+  res += ((unsigned short) latlon * STP_LATLON_SCALER2) & 0x80000000UL ? 1 : 0;
+  return stp_l2f(dst, NULL, res , 6);
 }
 
 
